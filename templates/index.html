@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <style>
+
+        body {
+            background: #fefa91;
+        }
+
+        input {
+            text-align: right;
+        }
+
+        .carousel-inner {
+        height: 0;
+        padding-bottom: 80%; /* this sets carousel aspect ratio (4:1 here) */
+        }
+
+        .carousel-item {
+          position: absolute !important; /* Bootstrap is insistent */
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+        }
+
+        .carousel-item img {
+          height: 100%; /* Bootstrap handles width already */
+          object-fit: cover; /* or 'contain' if you want stretch instead of crop */
+        }
+
+        #map_frame {
+            margin: 40px 10px 10px 8px;
+        }
+
+        #main_title {
+            font-size: 60px;
+            margin: 30px 0px 80px 0px;
+        }
+    </style>
+
+    <title>London Wifi Cafes</title>
+</head>
+<body onload="set_slide_data(0)">
+{% set Cafes = Cafes_string %}
+<script>
+    js_Cafes = JSON.parse('{{ Cafes_string|tojson }}')
+    function set_slide_data(record_id) {
+        document.getElementById('cafe_name').innerText = js_Cafes['data'][record_id]['name']
+        document.getElementById('neighborhood').innerText = js_Cafes['data'][record_id]['location']
+        document.getElementById('sock_check').checked = js_Cafes['data'][record_id]['has_sockets']
+        document.getElementById('toilet').checked = js_Cafes['data'][record_id]['has_toilet']
+        document.getElementById('has_wifi').checked = js_Cafes['data'][record_id]['has_wifi']
+        document.getElementById('use_cell').checked = js_Cafes['data'][record_id]['can_take_calls']
+        document.getElementById('num_seats').value = js_Cafes['data'][record_id]['seats']
+        document.getElementById('coffee_costs').value = js_Cafes['data'][record_id]['coffee_price']
+        document.getElementById('map_frame').src = js_Cafes['data'][record_id]['map_url']
+    }
+
+    function do_delete() {
+        var name_to_delete = prompt("Enter the name of the cafe to delete just as it appears when the cafe is showing in the carousel:")
+        for(let n = 0; n < js_Cafes['data'].length; n++) {
+            if (name_to_delete == js_Cafes['data'][n]['name']) {
+                window.location.href = "http://localhost:5000/delete/" + js_Cafes['data'][n]['id']
+            }
+        }
+    }
+
+</script>
+<div class="container">
+    <div class="row">
+        <div class="col-sm-12">
+            <h1 id="main_title" style="text-align: center;">London Wifi Cafes</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-4">
+            <div class="card">
+                <form id="cafe_features">
+                <h2 align="center" id="cafe_name" style="font-style: italic;"></h2>
+                <h3 align="center" id="neighborhood" ></h3>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">sockets <input type="checkbox" id="sock_check"></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">toilet <input type="checkbox" id="toilet"></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">wifi <input type="checkbox" id="has_wifi"></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">use cellphone <input type="checkbox" id="use_cell"></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">seats <input type="text" id="num_seats" size="3" style="border: 0px"></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">coffe costs <input type="text" id="coffee_costs" size="5" style="border: 0px"></li>
+                </ul>
+                </form>
+            </div>
+            <iframe id="map_frame" src="" width="400" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>      </div>
+        <div class="col-sm-8">
+            <div id="cafe_carousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    {% if Cafes['data'] %}
+                        {% for cafe in Cafes['data'] %}
+                            {% if loop.index == 1 %}
+                                <button type="button" data-bs-target="#cafe_carousel" data-bs-slide-to="{{ loop.index -1 }}" class="active" aria-current="true" aria-label="Slide {{ loop.index }}"></button>
+                            {% else %}
+                                <button type="button" data-bs-target="#cafe_carousel" data-bs-slide-to="{{ loop.index - 1 }}" aria-label="Slide {{ loop.index }}"></button>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <h2>no data</h2>
+                    {% endif %}
+                </div>
+                <div class="carousel-inner">
+                    {% if Cafes['data'] %}
+                           {% for cafe in Cafes['data'] %}
+                            {% if loop.index == 1 %}
+                                <div class="carousel-item data-bs-interval=15000 active">
+                            {% else %}
+                                <div class="carousel-item" data-bs-interval=15000>
+                            {% endif %}
+                                    <!--<img src="{{cafe['img_url']}}" class="d-block w-100" alt="cafe image">-->
+                                    <img src="{{ url_for('static', filename='images/' + cafe['img_url']) }}" class="d-block w-100" alt="cafe image">
+                    {{ url_for('static', filename='PictureName.jpg') }} </div>
+                        {% endfor %}
+                    {% else %}
+                        <h2>no data</h2>
+                    {% endif %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#cafe_carousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#cafe_carousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        </div>
+    </div>
+     <script>
+        var myCarousel = document.getElementById('cafe_carousel')
+        myCarousel.addEventListener('slide.bs.carousel', function (event) {
+        set_slide_data(event.to)
+   })
+    </script>
+        <div class="row" style="margin: 20px;">
+            <div class="col-sm-3" style="text-align: center;">
+                <p>copyright cambiumsoftware</p>
+            </div>
+            <div class="col-sm-3" style="text-align: center;">
+                <a href="http://localhost:5000/flask_app_3/add"><button type="button" class="btn btn-primary">Add a cafe</button></a>
+            </div>
+            <div class="col-sm-3"  style="text-align: center;">
+                <button type="button" class="btn btn-primary" onclick="do_delete()">Delete a cafe</button></a>
+            </div>
+            <div class="col-sm-3" style="text-align: center;">
+                <p><a href="mailto:admin@cambiumsoftware.com">Contact Cambium Software</a></p>
+            </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
